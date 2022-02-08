@@ -90,6 +90,9 @@ BEGIN_MESSAGE_MAP(CReSeqnoDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_CLOSE_FILE, &CReSeqnoDlg::OnBnClickedButtonCloseFile)
 
 	ON_BN_CLICKED(IDC_CLEARBUTTON, &CReSeqnoDlg::OnBnClickedClearbutton)
+	ON_BN_CLICKED(IDC_RADIO_NXXX, &CReSeqnoDlg::OnBnClickedRadioNxxx)
+	ON_BN_CLICKED(IDC_RADIO_HEIDENHEIN, &CReSeqnoDlg::OnBnClickedRadioHeidenhein)
+	ON_BN_CLICKED(IDC_BUTTON_ABOUT, &CReSeqnoDlg::OnBnClickedButtonAbout)
 END_MESSAGE_MAP()
 
 
@@ -98,10 +101,6 @@ END_MESSAGE_MAP()
 BOOL CReSeqnoDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
-
-	// Hinzufügen des Menübefehls "Info..." zum Systemmenü.
-
-	// IDM_ABOUTBOX muss sich im Bereich der Systembefehle befinden.
 	ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
 	ASSERT(IDM_ABOUTBOX < 0xF000);
 
@@ -121,6 +120,22 @@ BOOL CReSeqnoDlg::OnInitDialog()
 
 	// Symbol für dieses Dialogfeld festlegen.  Wird automatisch erledigt
 	//  wenn das Hauptfenster der Anwendung kein Dialogfeld ist
+	m_CFont.CreateFont(10,                                            // Height, ausprobieren
+		5,                                              // Width
+		0,                                              // Escapement
+		0,                                              // Orientation
+		FW_MEDIUM,                                // Weight
+		FALSE,                                           // Italic
+		FALSE,                                           // Underline
+		0,                                              // StrikeOut
+		ANSI_CHARSET,                             // CharSet
+		OUT_DEFAULT_PRECIS,                // OutPrecision
+		CLIP_DEFAULT_PRECIS,               // ClipPrecision
+		DEFAULT_QUALITY,                   // Quality
+		DEFAULT_PITCH | FF_SWISS,   // PitchAndFamily
+		_T("Courier New"));                       // Facename
+	m_EDIT_FILE.SetFont(&m_CFont, TRUE);
+
 	SetIcon(m_hIcon, TRUE);			// Großes Symbol verwenden
 	SetIcon(m_hIcon, FALSE);		// Kleines Symbol verwenden
 	DragAcceptFiles();
@@ -197,7 +212,7 @@ HCURSOR CReSeqnoDlg::OnQueryDragIcon()
 
 void CReSeqnoDlg::OnBnClickedbuttonopen()
 {
-
+	//testetstest
 	// TODO: Fügen Sie hier Ihren Handlercode für Benachrichtigungen des Steuerelements ein.
 	
 	CFileDialog cFileDialog(true ,NULL, NULL, NULL, _T("mpf-files (*.mpf)|*.mpf;|text-files(*.txt)|*.txt;|tape-files(*.tape)|*.tape;|nc-files(*.nc)|*.nc;|h-files(*.h)|*.h;|All-files(*.*)|*.*;|"));
@@ -245,21 +260,13 @@ void CReSeqnoDlg::OnBnClickedbuttonopen()
 	if (m_sFilecontent.GetSize() <= 0) {
 		m_LIST_MESSAGES.AddString("File is empty!");
 	}
-	
-	
-
-
-
-
 	//---------------------------------------------------------//
 	suggestedValues();
-
 }
 
 
 void CReSeqnoDlg::OnBnClickedOk()
 {
-
 	//CString windowText;
 	//m_EDIT_FILE.GetWindowTextA(windowText);
 	// Array durchgehen, zeilenweise ergänzen mit Zeilen nummer
@@ -287,11 +294,12 @@ void CReSeqnoDlg::OnBnClickedOk()
 
 
 	/// </NEU NUMMERIEREN BEGIN>/////////////////////////////////////////////////////////
-	for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
-	{
+	if (m_RADIO_FILTER_INT == 0) {
+		for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
+		{
 
-		cppLine = m_sFilecontent[iLine];
-					if (cppLine[0] == 'N') {
+			cppLine = m_sFilecontent[iLine];
+			if (cppLine[0] == 'N') {
 
 				for (int i = 0; i < cppLine.size(); i++)
 				{
@@ -314,11 +322,42 @@ void CReSeqnoDlg::OnBnClickedOk()
 				//Falls die Zeile keine Nummerierung hat wird Sie 1:1 übernommen//////////////////
 				m_sFilecontentNew.Add(cppLine.c_str());
 			}
-		
-		
-		
+
+
+
+		}
 	}
-	
+	else if (m_RADIO_FILTER_INT == 1) {
+		for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
+		{
+
+			cppLine = m_sFilecontent[iLine];
+			if (cppLine[0]>= 48 && cppLine[0] <= 57) {
+
+				for (int i = 0; i < cppLine.size(); i++)
+				{
+					if (cppLine[i] == ' ') {
+						firstSpaceIndex = i;
+						break;
+					}
+				}
+				cppLine = cppLine.substr(firstSpaceIndex, cppLine.length());
+
+				sSeqno.Format("%d ", iStart);
+				iStart += iStep;
+				sLineNew = sSeqno + cppLine.c_str();
+				m_sFilecontentNew.Add(sLineNew);
+
+				/// </NEU NUMMERIEREN END>/////////////////////////////////////////////////////////
+			}
+			else
+			{
+				//Falls die Zeile keine Nummerierung hat wird Sie 1:1 übernommen//////////////////
+				m_sFilecontentNew.Add(cppLine.c_str());
+			}
+
+		}	
+	}
 		theApp.ArrToVal(m_sFilecontentNew, sFilecontentNew);
 		m_EDIT_OUTPUT.SetWindowText(sFilecontentNew);
 		CString m_sMsg;
@@ -372,7 +411,7 @@ void CReSeqnoDlg::OnBnClickedButtonSaveFile()
 	}
 
 	snewFileName = sfileName.substr(lastSlashIndex);
-	//lastDot = snewFileName.find_last_of('.');
+	
 	snewFileName = snewFileName.replace(snewFileName.end() - 4, snewFileName.end(), "");
 	snewFileName = "BackupFiles\\" + snewFileName + "_backup.mpf";
 	int ok = rename(m_FILE_NAME, snewFileName.c_str());
@@ -464,35 +503,60 @@ void CReSeqnoDlg::suggestedValues()
 	int firstSpaceIndex = 0;
 	int iStart;
 	vector<int>numberVector;
-	// TODO: Add your control notification handler code here
-	int counter = 0;
-	for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
-	{
-		sLine = m_sFilecontent[iLine];
-		if (sLine[0] == 'N' ) {
-
-			for (int i = 0; i < sLine.size(); i++)
-			{
-				if (sLine[i] == ' ') {
-					firstSpaceIndex = i;
-					break;
-				}
-			}
-			sLine = sLine.substr( 1 ,firstSpaceIndex );
-
-			numberVector.push_back( stoi(sLine));
-			
-		}
 	
-	}
+	int counter = 0;
+	
+	if (m_RADIO_FILTER_INT == 0) {
+		for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
+		{
+			sLine = m_sFilecontent[iLine];
+			if (sLine[0] == 'N')
+			{
+				for (int i = 0; i < sLine.size(); i++)
+				{
+					if (sLine[i] == ' ') {
+						firstSpaceIndex = i;
+						break;
+					}
+				}
 
+				sLine = sLine.substr(1, firstSpaceIndex);
+
+				numberVector.push_back(stoi(sLine));
+
+			}
+
+		}
+	}
+	else if (m_RADIO_FILTER_INT == 1) {
+		for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
+		{
+			sLine = m_sFilecontent[iLine];
+			if (sLine[0] >=48 && sLine[0]<=57)
+			{
+				
+				for (int i = 0; i < sLine.size(); i++)
+				{
+					if (sLine[i] == ' ') {
+						firstSpaceIndex = i;
+						break;
+					}
+				}
+
+				sLine = sLine.substr(0, firstSpaceIndex);
+
+				numberVector.push_back(stoi(sLine));
+
+			}
+
+		}
+	}
 	CString suggestedValue;
-	//length.Format(" Length %d", numberVector.size());
+	
 	
 	vector<int>diff;
 
 	for (int i = 0; i <numberVector.size() - 1; i++) {
-		//cout<<allNumbers[i]<<endl;
 		if (numberVector.at(i + 1) - numberVector.at(i) > 0) {
 			diff.push_back(numberVector.at(i + 1) - numberVector.at(i));
 		}
@@ -611,4 +675,27 @@ void CReSeqnoDlg::OnBnClickedButton1()
 void CReSeqnoDlg::OnBnClickedClearbutton()
 {
 	m_LIST_MESSAGES.ResetContent();
+}
+
+
+void CReSeqnoDlg::OnBnClickedRadioNxxx()
+{
+	m_RADIO_FILTER_INT = 0;
+}
+
+
+void CReSeqnoDlg::OnBnClickedRadioHeidenhein()
+{
+	// TODO: Add your control notification handler code here
+	m_RADIO_FILTER_INT = 1;
+}
+
+
+void CReSeqnoDlg::OnBnClickedButtonAbout()
+{
+	// TODO: Add your control notification handler code here
+	CAboutDlg cAboutDlg;
+
+	cAboutDlg.DoModal();
+
 }

@@ -1,6 +1,5 @@
 
 // ReSeqnoDlg.h: Headerdatei
-//
 
 #pragma once
 
@@ -35,9 +34,10 @@ private:
 	int			m_CCOMBOBOX_INDEX;
 	CString		m_sInputfile;
 	int			m_RADIO_FILTER_INT;
+	CFont		m_CFont;
 
 //	CButton m_RADIO_NXXX;
-	// Generierte Funktionen für die Meldungstabellen
+// Generierte Funktionen für die Meldungstabellen
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
@@ -57,6 +57,8 @@ public:
 	afx_msg void OnBnClickedButtonCloseFile();
 	afx_msg void OnBnClickedRadio2();
 	afx_msg void OnBnClickedButton1();
-	
 	afx_msg void OnBnClickedClearbutton();
+	afx_msg void OnBnClickedRadioNxxx();
+	afx_msg void OnBnClickedRadioHeidenhein();
+	afx_msg void OnBnClickedButtonAbout();
 };
