@@ -60,7 +60,7 @@ END_MESSAGE_MAP()
 
 CReSeqnoDlg::CReSeqnoDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_RESEQNO_DIALOG, pParent)
-	, m_RADIO_FILTER_INT(0)
+	, m_RADIO_FILTER_INT(-1)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -120,7 +120,7 @@ BOOL CReSeqnoDlg::OnInitDialog()
 
 	// Symbol für dieses Dialogfeld festlegen.  Wird automatisch erledigt
 	//  wenn das Hauptfenster der Anwendung kein Dialogfeld ist
-	m_CFont.CreateFont(10,                                            // Height, ausprobieren
+	/*m_CFont.CreateFont(10,                                            // Height, ausprobieren
 		5,                                              // Width
 		0,                                              // Escapement
 		0,                                              // Orientation
@@ -134,7 +134,7 @@ BOOL CReSeqnoDlg::OnInitDialog()
 		DEFAULT_QUALITY,                   // Quality
 		DEFAULT_PITCH | FF_SWISS,   // PitchAndFamily
 		_T("Courier New"));                       // Facename
-	m_EDIT_FILE.SetFont(&m_CFont, TRUE);
+	m_EDIT_FILE.SetFont(&m_CFont, TRUE);*/
 
 	SetIcon(m_hIcon, TRUE);			// Großes Symbol verwenden
 	SetIcon(m_hIcon, FALSE);		// Kleines Symbol verwenden
@@ -155,6 +155,7 @@ BOOL CReSeqnoDlg::OnInitDialog()
 	m_COMBO_START.SetCurSel(m_CCOMBOBOX_INDEX);
 
 	loadFileInfo();
+	m_RADIO_FILTER_INT = -1;
 	return TRUE;  // TRUE zurückgeben, wenn der Fokus nicht auf ein Steuerelement gesetzt wird
 }
 
@@ -208,8 +209,6 @@ HCURSOR CReSeqnoDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-
-
 void CReSeqnoDlg::OnBnClickedbuttonopen()
 {
 	//testetstest
@@ -254,6 +253,7 @@ void CReSeqnoDlg::OnBnClickedbuttonopen()
 		}
 		theApp.ArrToVal(m_sFilecontent, sFilecontent);
 		m_EDIT_FILE.SetWindowText(sFilecontent);
+		// close!
 		
 		
 	}
@@ -267,6 +267,9 @@ void CReSeqnoDlg::OnBnClickedbuttonopen()
 
 void CReSeqnoDlg::OnBnClickedOk()
 {
+	m_EDIT_OUTPUT.Clear();
+	m_sFilecontentNew.RemoveAll();
+	upDateText();
 	//CString windowText;
 	//m_EDIT_FILE.GetWindowTextA(windowText);
 	// Array durchgehen, zeilenweise ergänzen mit Zeilen nummer
@@ -290,9 +293,7 @@ void CReSeqnoDlg::OnBnClickedOk()
 	{
 		m_LIST_MESSAGES.AddString("File is empty!");
 	}
-
-
-
+	UpdateData(true);
 	/// </NEU NUMMERIEREN BEGIN>/////////////////////////////////////////////////////////
 	if (m_RADIO_FILTER_INT == 0) {
 		for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
@@ -322,8 +323,6 @@ void CReSeqnoDlg::OnBnClickedOk()
 				//Falls die Zeile keine Nummerierung hat wird Sie 1:1 übernommen//////////////////
 				m_sFilecontentNew.Add(cppLine.c_str());
 			}
-
-
 
 		}
 	}
@@ -505,81 +504,82 @@ void CReSeqnoDlg::suggestedValues()
 	vector<int>numberVector;
 	
 	int counter = 0;
-	
-	if (m_RADIO_FILTER_INT == 0) {
-		for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
-		{
-			sLine = m_sFilecontent[iLine];
-			if (sLine[0] == 'N')
+	try {
+		if (m_RADIO_FILTER_INT == 0) {
+			for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
 			{
-				for (int i = 0; i < sLine.size(); i++)
+				sLine = m_sFilecontent[iLine];
+				if (sLine[0] == 'N')
 				{
-					if (sLine[i] == ' ') {
-						firstSpaceIndex = i;
-						break;
+					for (int i = 0; i < sLine.size(); i++)
+					{
+						if (sLine[i] == ' ') {
+							firstSpaceIndex = i;
+							break;
+						}
 					}
+
+					sLine = sLine.substr(1, firstSpaceIndex);
+
+					numberVector.push_back(stoi(sLine));
+
 				}
 
-				sLine = sLine.substr(1, firstSpaceIndex);
-
-				numberVector.push_back(stoi(sLine));
-
 			}
-
 		}
-	}
-	else if (m_RADIO_FILTER_INT == 1) {
-		for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
-		{
-			sLine = m_sFilecontent[iLine];
-			if (sLine[0] >=48 && sLine[0]<=57)
+		else if (m_RADIO_FILTER_INT == 1) {
+			for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
 			{
-				
-				for (int i = 0; i < sLine.size(); i++)
+				sLine = m_sFilecontent[iLine];
+				if (sLine[0] >= 48 && sLine[0] <= 57)
 				{
-					if (sLine[i] == ' ') {
-						firstSpaceIndex = i;
-						break;
+
+					for (int i = 0; i < sLine.size(); i++)
+					{
+						if (!(sLine[i] >= 48 && sLine[i] <= 57)) {
+							firstSpaceIndex = i;
+							break;
+						}
 					}
+
+					sLine = sLine.substr(0, firstSpaceIndex);
+
+					numberVector.push_back(stoi(sLine));
+
 				}
 
-				sLine = sLine.substr(0, firstSpaceIndex);
-
-				numberVector.push_back(stoi(sLine));
-
-			}
-
-		}
-	}
-	CString suggestedValue;
-	
-	
-	vector<int>diff;
-
-	for (int i = 0; i <numberVector.size() - 1; i++) {
-		if (numberVector.at(i + 1) - numberVector.at(i) > 0) {
-			diff.push_back(numberVector.at(i + 1) - numberVector.at(i));
-		}
-	}
-
-	sort(diff.begin(),diff.end());
-
-	int count = 0;
-	int highscore = 0;
-	int index = 0;
-
-	for (int i = 0; i < diff.size()-1; i++) {
-		if (diff.at(i) == diff.at(i + 1)) {
-			count++;
-		}
-		else {
-			if (count > highscore) {
-				highscore = counter;
-				index = i;
-				counter = 0;
 			}
 		}
-	}
+		CString suggestedValue;
+
+
+		vector<int>diff;
+
+		for (int i = 0; i < numberVector.size() - 1; i++) {
+			if (numberVector.at(i + 1) - numberVector.at(i) > 0) {
+				diff.push_back(numberVector.at(i + 1) - numberVector.at(i));
+			}
+		}
+
+		sort(diff.begin(), diff.end());
+
+		int count = 0;
+		int highscore = 0;
+		int index = 0;
+
+		for (int i = 0; i < diff.size() - 1; i++) {
+			if (diff.at(i) == diff.at(i + 1)) {
+				count++;
+			}
+			else {
+				if (count > highscore) {
+					highscore = counter;
+					index = i;
+					counter = 0;
+				}
+			}
+		}
+	
 
 	suggestedValue.Format("Suggested Start Value:%d", numberVector.at(0));
 	m_LIST_MESSAGES.AddString(suggestedValue);
@@ -594,7 +594,20 @@ void CReSeqnoDlg::suggestedValues()
 	m_CCOMBOBOX_INDEX++;
 	m_COMBO_START.SetCurSel(m_CCOMBOBOX_INDEX);
 	m_COMBO_STEP.SetCurSel(m_CCOMBOBOX_INDEX);
-	
+	}
+	catch (const std::out_of_range& e) {
+		if (m_RADIO_FILTER_INT == 0) {
+			m_LIST_MESSAGES.AddString("Wrong numbering property please change ");
+			m_LIST_MESSAGES.AddString("Current property: NXXX");
+			m_LIST_MESSAGES.AddString("Change to: Heidenhein");
+		}
+		else if (m_RADIO_FILTER_INT == 1) {
+
+			m_LIST_MESSAGES.AddString("Wrong numbering property please change ");
+			m_LIST_MESSAGES.AddString("Current property: Heidenhein");
+			m_LIST_MESSAGES.AddString("Change to: NXXX");
+		}
+	}
 
 }
 
@@ -624,6 +637,7 @@ void CReSeqnoDlg::saveFileInfo()
 
 void CReSeqnoDlg::loadFileInfo()
 {
+	//TEST
 	// Die Datei inifile wird mit mit der Information der letzten Sitzung geladen
 	// Die Werte werden in ein String abgespeichert und dann der CCombobox erst dazu addiert
 	// m_CCOMBOBOX_INDEX wird um eins erhöht damit es auf das zuletzt hinzugefügte Wert zeigt
@@ -665,8 +679,27 @@ void CReSeqnoDlg::OnBnClickedButton1()
 }
 
 
-
-
+void CReSeqnoDlg::upDateText() {
+	
+	//theApp.ArrToVal(m_sFilecontent, sFilecontent);
+	//m_EDIT_FILE.SetWindowText(sFilecontent);
+	CString update_text;
+	m_EDIT_FILE.GetWindowTextA(update_text);
+	m_sFilecontent.RemoveAll();
+	CString line;
+	for (int i = 0; i < update_text.GetLength(); i++) {
+		if (update_text[i] == '\n') {
+			
+			m_sFilecontent.Add(line);
+			line = "";
+		}
+		else {
+			line = line + update_text[i];
+		}
+	}
+		
+	
+}
 
 
 

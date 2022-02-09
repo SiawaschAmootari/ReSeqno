@@ -52,7 +52,8 @@ private:
 	void suggestedValues();
 	void saveFileInfo();
 	void loadFileInfo();
-	
+	void upDateText();
+
 public:
 	afx_msg void OnBnClickedButtonCloseFile();
 	afx_msg void OnBnClickedRadio2();
@@ -61,4 +62,8 @@ public:
 	afx_msg void OnBnClickedRadioNxxx();
 	afx_msg void OnBnClickedRadioHeidenhein();
 	afx_msg void OnBnClickedButtonAbout();
+
+	
+	int m_iStart;
+	int iedit;
 };
