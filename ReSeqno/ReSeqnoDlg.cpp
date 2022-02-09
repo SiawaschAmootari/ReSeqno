@@ -254,7 +254,7 @@ void CReSeqnoDlg::OnBnClickedbuttonopen()
 		theApp.ArrToVal(m_sFilecontent, sFilecontent);
 		m_EDIT_FILE.SetWindowText(sFilecontent);
 		// close!
-		
+		file.Close();
 		
 	}
 	if (m_sFilecontent.GetSize() <= 0) {
@@ -637,7 +637,7 @@ void CReSeqnoDlg::saveFileInfo()
 
 void CReSeqnoDlg::loadFileInfo()
 {
-	//TEST
+	
 	// Die Datei inifile wird mit mit der Information der letzten Sitzung geladen
 	// Die Werte werden in ein String abgespeichert und dann der CCombobox erst dazu addiert
 	// m_CCOMBOBOX_INDEX wird um eins erhöht damit es auf das zuletzt hinzugefügte Wert zeigt
@@ -728,7 +728,6 @@ void CReSeqnoDlg::OnBnClickedButtonAbout()
 {
 	// TODO: Add your control notification handler code here
 	CAboutDlg cAboutDlg;
-
 	cAboutDlg.DoModal();
 
 }
