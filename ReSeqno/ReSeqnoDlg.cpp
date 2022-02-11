@@ -213,55 +213,59 @@ void CReSeqnoDlg::OnBnClickedbuttonopen()
 {
 	//testetstest
 	// TODO: Fügen Sie hier Ihren Handlercode für Benachrichtigungen des Steuerelements ein.
-	
-	CFileDialog cFileDialog(true ,NULL, NULL, NULL, _T("mpf-files (*.mpf)|*.mpf;|text-files(*.txt)|*.txt;|tape-files(*.tape)|*.tape;|nc-files(*.nc)|*.nc;|h-files(*.h)|*.h;|All-files(*.*)|*.*;|"));
+	try {
+		CFileDialog cFileDialog(true, NULL, NULL, NULL, _T("mpf-files (*.mpf)|*.mpf;|text-files(*.txt)|*.txt;|tape-files(*.tape)|*.tape;|nc-files(*.nc)|*.nc;|h-files(*.h)|*.h;|All-files(*.*)|*.*;|"));
 
-	int iD;
-	iD = (int)cFileDialog.DoModal();
-	bool bOk = true;
-	//CString m_sInputfile;
-	CStdioFile file;
-	vector<string>data;
-	if (iD == IDOK)
-	{
-		
-		m_sInputfile = cFileDialog.GetPathName();
-		CString newName = m_sInputfile + "_backup";
-		m_STATIC_PATH.SetWindowText(m_sInputfile);
-		//rename(m_sInputfile, newName);
+		int iD;
+		iD = (int)cFileDialog.DoModal();
+		bool bOk = true;
+		//CString m_sInputfile;
 		CStdioFile file;
-		file.Open(m_sInputfile, CStdioFile::modeRead);
-		
-		CString sLine;
-		bool bRead;
-		CString sFilecontent = _T("");
-		int i = 0;
-
-		m_sFilecontent.RemoveAll();
-		m_FILE_NAME = m_sInputfile;
-		
-		while (true)
+		vector<string>data;
+		if (iD == IDOK)
 		{
-			bRead = file.ReadString(sLine);
-			if (bRead == false)
-			{
-				break;
-			}
 
-			m_sFilecontent.Add(sLine);
-			data.push_back((LPCTSTR)sLine);
+			m_sInputfile = cFileDialog.GetPathName();
+			CString newName = m_sInputfile + "_backup";
+			m_STATIC_PATH.SetWindowText(m_sInputfile);
+			//rename(m_sInputfile, newName);
+			CStdioFile file;
+			file.Open(m_sInputfile, CStdioFile::modeRead);
+
+			CString sLine;
+			bool bRead;
+			CString sFilecontent = _T("");
+			int i = 0;
+
+			m_sFilecontent.RemoveAll();
+			m_FILE_NAME = m_sInputfile;
+
+			while (true)
+			{
+				bRead = file.ReadString(sLine);
+				if (bRead == false)
+				{
+					break;
+				}
+
+				m_sFilecontent.Add(sLine);
+				data.push_back((LPCTSTR)sLine);
+			}
+			theApp.ArrToVal(m_sFilecontent, sFilecontent);
+			m_EDIT_FILE.SetWindowText(sFilecontent);
+			// close!
+			file.Close();
+
 		}
-		theApp.ArrToVal(m_sFilecontent, sFilecontent);
-		m_EDIT_FILE.SetWindowText(sFilecontent);
-		// close!
-		file.Close();
-		
+		if (m_FILE_NAME.GetLength() <= 0) {
+			m_LIST_MESSAGES.AddString("No file selected");
+		}
+		//---------------------------------------------------------//
+		suggestedValues();
 	}
-	if (m_sFilecontent.GetSize() <= 0) {
-		m_LIST_MESSAGES.AddString("File is empty!");
+	catch (const std::out_of_range& e) {
+		m_LIST_MESSAGES.AddString("No file selected");
 	}
-	//---------------------------------------------------------//
-	suggestedValues();
 }
 
 
@@ -302,16 +306,16 @@ void CReSeqnoDlg::OnBnClickedOk()
 			cppLine = m_sFilecontent[iLine];
 			if (cppLine[0] == 'N') {
 
-				for (int i = 0; i < cppLine.size(); i++)
+				for (int i = 1; i < cppLine.size(); i++)
 				{
-					if (cppLine[i] == ' ') {
+					if (!(cppLine[i] >= 48 && cppLine[i] <= 57)) {
 						firstSpaceIndex = i;
 						break;
 					}
 				}
 				cppLine = cppLine.substr(firstSpaceIndex, cppLine.length());
 
-				sSeqno.Format("N%d ", iStart);
+				sSeqno.Format("N%d", iStart);
 				iStart += iStep;
 				sLineNew = sSeqno + cppLine.c_str();
 				m_sFilecontentNew.Add(sLineNew);
@@ -335,14 +339,14 @@ void CReSeqnoDlg::OnBnClickedOk()
 
 				for (int i = 0; i < cppLine.size(); i++)
 				{
-					if (cppLine[i] == ' ') {
+					if (!(cppLine[i] >= 48 && cppLine[i] <= 57)) {
 						firstSpaceIndex = i;
 						break;
 					}
 				}
 				cppLine = cppLine.substr(firstSpaceIndex, cppLine.length());
 
-				sSeqno.Format("%d ", iStart);
+				sSeqno.Format("%d", iStart);
 				iStart += iStep;
 				sLineNew = sSeqno + cppLine.c_str();
 				m_sFilecontentNew.Add(sLineNew);
@@ -387,61 +391,66 @@ void CReSeqnoDlg::OnBnClickedCancel()
 void CReSeqnoDlg::OnBnClickedButtonSaveFile()
 {
 
-
-	CString sFilecontentNew;
-	string sfileName(m_FILE_NAME, m_FILE_NAME.GetLength());
-	string snewFileName;
-	
-	int lastSlashIndex = 0;
-	int lastDot = 0;
-	
-	// IGNORE:Der Name der Ursprünglichen Datei wird zerlegt und ein "_new" wird angehängt
-	// UPDATE: der Name der neuen = Name der alten Datei
-	//         alte Da
-	for (int i = 0; i < sfileName.length(); i++) 
-	{
-		if (sfileName[i] == '\\') {
-			lastSlashIndex = i + 1;
-		}
-		if (sfileName[i] == '.') {
-			lastDot = i;
-		}
-
-	}
-
-	snewFileName = sfileName.substr(lastSlashIndex);
-	
-	snewFileName = snewFileName.replace(snewFileName.end() - 4, snewFileName.end(), "");
-	snewFileName = "BackupFiles\\" + snewFileName + "_backup.mpf";
-	int ok = rename(m_FILE_NAME, snewFileName.c_str());
-
-	// Neuer Dialog wird gestartet, die Datei kann auch überschrieben werden 
-	// falls diese schon existiert der User wird aber nochmals gefragt:OFN_OVERWRITEPROMPT 
-
-	CFileDialog cFileDialog(false, _T("mpf"), m_FILE_NAME, OFN_OVERWRITEPROMPT, _T("mpf-files (*.mpf)|*.mpf;|text-Files(*.txt)|*.txt;|"));
-	int iD;
-	iD = (int)cFileDialog.DoModal();
-	bool bOk = true;
-	CString m_sSavefile;
-	
-	if (iD == IDOK)
-	{
-		m_sSavefile = cFileDialog.GetPathName();
-		CStdioFile file(cFileDialog.GetPathName(), CFile::modeCreate | CFile::modeWrite | CFile::typeBinary );
+	if (m_FILE_NAME.GetLength() > 0) {
 		
 
-		for (int i = 0; i < m_sFilecontentNew.GetSize(); i++) {
-			file.WriteString(m_sFilecontentNew.GetAt(i).GetString());
-			file.WriteString("\r\n");
+		CString sFilecontentNew;
+		string sfileName(m_FILE_NAME, m_FILE_NAME.GetLength());
+		string snewFileName;
+
+		int lastSlashIndex = 0;
+		int lastDot = 0;
+
+		// IGNORE:Der Name der Ursprünglichen Datei wird zerlegt und ein "_new" wird angehängt
+		// UPDATE: der Name der neuen = Name der alten Datei
+		//         alte Da
+		for (int i = 0; i < sfileName.length(); i++)
+		{
+			if (sfileName[i] == '\\') {
+				lastSlashIndex = i + 1;
+			}
+			if (sfileName[i] == '.') {
+				lastDot = i;
+			}
+
 		}
 
-		if (m_sFilecontent.GetSize() <= 0) {
-			m_LIST_MESSAGES.AddString("File is empty!");
+		snewFileName = sfileName.substr(lastSlashIndex);
+
+		snewFileName = snewFileName.replace(snewFileName.end() - 4, snewFileName.end(), "");
+		snewFileName = "BackupFiles\\" + snewFileName + "_backup.mpf";
+		int ok = rename(m_FILE_NAME, snewFileName.c_str());
+
+		// Neuer Dialog wird gestartet, die Datei kann auch überschrieben werden 
+		// falls diese schon existiert der User wird aber nochmals gefragt:OFN_OVERWRITEPROMPT 
+
+		CFileDialog cFileDialog(false, _T("mpf"), m_FILE_NAME, OFN_OVERWRITEPROMPT, _T("mpf-files (*.mpf)|*.mpf;|text-Files(*.txt)|*.txt;|"));
+		int iD;
+		iD = (int)cFileDialog.DoModal();
+		bool bOk = true;
+		CString m_sSavefile;
+
+		if (iD == IDOK)
+		{
+			m_sSavefile = cFileDialog.GetPathName();
+			CStdioFile file(cFileDialog.GetPathName(), CFile::modeCreate | CFile::modeWrite | CFile::typeBinary);
+
+
+			for (int i = 0; i < m_sFilecontentNew.GetSize(); i++) {
+				file.WriteString(m_sFilecontentNew.GetAt(i).GetString());
+				file.WriteString("\r\n");
+			}
+
+			if (m_sFilecontent.GetSize() <= 0) {
+				m_LIST_MESSAGES.AddString("File is empty!");
+			}
+			file.Flush();
+			file.Close();
 		}
-		file.Flush();
-		file.Close();
 	}
-	
+	else {
+		m_LIST_MESSAGES.AddString("File is empty!");
+	}
 }
 
 
@@ -493,6 +502,7 @@ void CReSeqnoDlg::OnDropFiles(HDROP dropInfo)
 
 void CReSeqnoDlg::suggestedValues()
 {
+	try {
 	string sLine;
 	CString sLineNew;
 	CString sSeqno;
@@ -504,7 +514,7 @@ void CReSeqnoDlg::suggestedValues()
 	vector<int>numberVector;
 	
 	int counter = 0;
-	try {
+	
 		if (m_RADIO_FILTER_INT == 0) {
 			for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
 			{
@@ -520,9 +530,7 @@ void CReSeqnoDlg::suggestedValues()
 					}
 
 					sLine = sLine.substr(1, firstSpaceIndex);
-
 					numberVector.push_back(stoi(sLine));
-
 				}
 
 			}
@@ -533,7 +541,6 @@ void CReSeqnoDlg::suggestedValues()
 				sLine = m_sFilecontent[iLine];
 				if (sLine[0] >= 48 && sLine[0] <= 57)
 				{
-
 					for (int i = 0; i < sLine.size(); i++)
 					{
 						if (!(sLine[i] >= 48 && sLine[i] <= 57)) {
@@ -541,18 +548,13 @@ void CReSeqnoDlg::suggestedValues()
 							break;
 						}
 					}
-
 					sLine = sLine.substr(0, firstSpaceIndex);
-
 					numberVector.push_back(stoi(sLine));
-
 				}
-
 			}
 		}
+
 		CString suggestedValue;
-
-
 		vector<int>diff;
 
 		for (int i = 0; i < numberVector.size() - 1; i++) {
@@ -580,7 +582,6 @@ void CReSeqnoDlg::suggestedValues()
 			}
 		}
 	
-
 	suggestedValue.Format("Suggested Start Value:%d", numberVector.at(0));
 	m_LIST_MESSAGES.AddString(suggestedValue);
 	suggestedValue.Format("Suggested Step Value:%d", diff.at(index));
@@ -596,13 +597,17 @@ void CReSeqnoDlg::suggestedValues()
 	m_COMBO_STEP.SetCurSel(m_CCOMBOBOX_INDEX);
 	}
 	catch (const std::out_of_range& e) {
-		if (m_RADIO_FILTER_INT == 0) {
+		
+		if (m_FILE_NAME.GetLength()<0) {
+			m_LIST_MESSAGES.AddString("No file selected");
+
+		}
+		else if (m_RADIO_FILTER_INT == 0) {
 			m_LIST_MESSAGES.AddString("Wrong numbering property please change ");
 			m_LIST_MESSAGES.AddString("Current property: NXXX");
 			m_LIST_MESSAGES.AddString("Change to: Heidenhein");
 		}
 		else if (m_RADIO_FILTER_INT == 1) {
-
 			m_LIST_MESSAGES.AddString("Wrong numbering property please change ");
 			m_LIST_MESSAGES.AddString("Current property: Heidenhein");
 			m_LIST_MESSAGES.AddString("Change to: NXXX");
@@ -630,9 +635,7 @@ void CReSeqnoDlg::saveFileInfo()
 	inifile << "Information from the last session:" << endl;
 	inifile << "START VALUE:" << sStart<< endl;
 	inifile << "STEP VALUE:" << sStep << endl;
-	
 	inifile.close();
-
 }
 
 void CReSeqnoDlg::loadFileInfo()
@@ -668,7 +671,6 @@ void CReSeqnoDlg::loadFileInfo()
 	}
 
 	inifile.close();
-
 }
 
 void CReSeqnoDlg::OnBnClickedButton1()
@@ -680,7 +682,6 @@ void CReSeqnoDlg::OnBnClickedButton1()
 
 
 void CReSeqnoDlg::upDateText() {
-	
 	//theApp.ArrToVal(m_sFilecontent, sFilecontent);
 	//m_EDIT_FILE.SetWindowText(sFilecontent);
 	CString update_text;
@@ -697,10 +698,14 @@ void CReSeqnoDlg::upDateText() {
 			line = line + update_text[i];
 		}
 	}
-		
-	
 }
 
+
+void CReSeqnoDlg::pushTopList(CString s) {
+	for (int i = 0; i < m_LIST_MESSAGES.GetCount(); i++) {
+		m_LIST_MESSAGES.AddString((LPCSTR)m_LIST_MESSAGES.GetItemData(i));
+	}
+}
 
 
 
@@ -729,5 +734,7 @@ void CReSeqnoDlg::OnBnClickedButtonAbout()
 	// TODO: Add your control notification handler code here
 	CAboutDlg cAboutDlg;
 	cAboutDlg.DoModal();
-
 }
+
+
+
