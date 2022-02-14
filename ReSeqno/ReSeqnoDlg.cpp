@@ -273,7 +273,7 @@ void CReSeqnoDlg::OnBnClickedOk()
 {
 	m_EDIT_OUTPUT.Clear();
 	m_sFilecontentNew.RemoveAll();
-	upDateText();
+	//upDateText();
 	//CString windowText;
 	//m_EDIT_FILE.GetWindowTextA(windowText);
 	// Array durchgehen, zeilenweise ergänzen mit Zeilen nummer
@@ -433,12 +433,12 @@ void CReSeqnoDlg::OnBnClickedButtonSaveFile()
 		if (iD == IDOK)
 		{
 			m_sSavefile = cFileDialog.GetPathName();
-			CStdioFile file(cFileDialog.GetPathName(), CFile::modeCreate | CFile::modeWrite | CFile::typeBinary);
+			CStdioFile file(cFileDialog.GetPathName(), CFile::modeCreate | CFile::modeWrite | CFile::typeText);
 
 
 			for (int i = 0; i < m_sFilecontentNew.GetSize(); i++) {
 				file.WriteString(m_sFilecontentNew.GetAt(i).GetString());
-				file.WriteString("\r\n");
+				file.WriteString("\n");
 			}
 
 			if (m_sFilecontent.GetSize() <= 0) {
@@ -573,13 +573,13 @@ void CReSeqnoDlg::suggestedValues()
 			if (diff.at(i) == diff.at(i + 1)) {
 				count++;
 			}
-			else {
+		
 				if (count > highscore) {
 					highscore = counter;
 					index = i;
 					counter = 0;
 				}
-			}
+			
 		}
 	
 	suggestedValue.Format("Suggested Start Value:%d", numberVector.at(0));
