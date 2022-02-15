@@ -1,3 +1,3 @@
 Information from the last session:
-START VALUE:100
+START VALUE:55
 STEP VALUE:10

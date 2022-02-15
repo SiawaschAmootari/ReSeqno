@@ -93,6 +93,7 @@ BEGIN_MESSAGE_MAP(CReSeqnoDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_RADIO_NXXX, &CReSeqnoDlg::OnBnClickedRadioNxxx)
 	ON_BN_CLICKED(IDC_RADIO_HEIDENHEIN, &CReSeqnoDlg::OnBnClickedRadioHeidenhein)
 	ON_BN_CLICKED(IDC_BUTTON_ABOUT, &CReSeqnoDlg::OnBnClickedButtonAbout)
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 
@@ -120,8 +121,8 @@ BOOL CReSeqnoDlg::OnInitDialog()
 
 	// Symbol für dieses Dialogfeld festlegen.  Wird automatisch erledigt
 	//  wenn das Hauptfenster der Anwendung kein Dialogfeld ist
-	/*m_CFont.CreateFont(10,                                            // Height, ausprobieren
-		5,                                              // Width
+	m_CFont.CreateFont(16,                                            // Height, ausprobieren
+		0,                                              // Width
 		0,                                              // Escapement
 		0,                                              // Orientation
 		FW_MEDIUM,                                // Weight
@@ -134,7 +135,9 @@ BOOL CReSeqnoDlg::OnInitDialog()
 		DEFAULT_QUALITY,                   // Quality
 		DEFAULT_PITCH | FF_SWISS,   // PitchAndFamily
 		_T("Courier New"));                       // Facename
-	m_EDIT_FILE.SetFont(&m_CFont, TRUE);*/
+	m_EDIT_FILE.SetFont(&m_CFont, TRUE);
+	m_EDIT_OUTPUT.SetFont(&m_CFont, TRUE);
+	m_LIST_MESSAGES.SetFont(&m_CFont, TRUE);
 
 	SetIcon(m_hIcon, TRUE);			// Großes Symbol verwenden
 	SetIcon(m_hIcon, FALSE);		// Kleines Symbol verwenden
@@ -221,7 +224,6 @@ void CReSeqnoDlg::OnBnClickedbuttonopen()
 		bool bOk = true;
 		//CString m_sInputfile;
 		CStdioFile file;
-		vector<string>data;
 		if (iD == IDOK)
 		{
 
@@ -249,7 +251,6 @@ void CReSeqnoDlg::OnBnClickedbuttonopen()
 				}
 
 				m_sFilecontent.Add(sLine);
-				data.push_back((LPCTSTR)sLine);
 			}
 			theApp.ArrToVal(m_sFilecontent, sFilecontent);
 			m_EDIT_FILE.SetWindowText(sFilecontent);
@@ -262,9 +263,13 @@ void CReSeqnoDlg::OnBnClickedbuttonopen()
 		}
 		//---------------------------------------------------------//
 		suggestedValues();
+		UpdateData(false);
 	}
 	catch (const std::out_of_range& e) {
 		m_LIST_MESSAGES.AddString("No file selected");
+	}
+	catch(const std::invalid_argument& e){
+		m_LIST_MESSAGES.AddString("Invalid file");
 	}
 }
 
@@ -297,7 +302,8 @@ void CReSeqnoDlg::OnBnClickedOk()
 	{
 		m_LIST_MESSAGES.AddString("File is empty!");
 	}
-	UpdateData(true);
+
+	UpdateData(false);
 	/// </NEU NUMMERIEREN BEGIN>/////////////////////////////////////////////////////////
 	if (m_RADIO_FILTER_INT == 0) {
 		for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
@@ -308,7 +314,7 @@ void CReSeqnoDlg::OnBnClickedOk()
 
 				for (int i = 1; i < cppLine.size(); i++)
 				{
-					if (!(cppLine[i] >= 48 && cppLine[i] <= 57)) {
+					if (!(isdigit(cppLine[i]))) {
 						firstSpaceIndex = i;
 						break;
 					}
@@ -335,11 +341,11 @@ void CReSeqnoDlg::OnBnClickedOk()
 		{
 
 			cppLine = m_sFilecontent[iLine];
-			if (cppLine[0]>= 48 && cppLine[0] <= 57) {
+			if (isdigit(cppLine[0])) {
 
 				for (int i = 0; i < cppLine.size(); i++)
 				{
-					if (!(cppLine[i] >= 48 && cppLine[i] <= 57)) {
+					if (!(isdigit(cppLine[i]))) {
 						firstSpaceIndex = i;
 						break;
 					}
@@ -378,13 +384,23 @@ void CReSeqnoDlg::OnBnClickedButtonSave()
 }
 
 
-void CReSeqnoDlg::OnBnClickedCancel()
+void CReSeqnoDlg::OnBnClickedCancel() // auf escape drücken
 {
-	// TODO: Fügen Sie hier Ihren Handlercode für Benachrichtigungen des Steuerelements ein.
-	CDialogEx::OnCancel();
-	
+	Close();
 }
 
+void CReSeqnoDlg::OnClose()
+{
+	Close();
+}
+void CReSeqnoDlg::Close()
+{
+	saveFileInfo();
+	//PostQuitMessage(0);
+
+	CDialog::OnCancel();
+
+}
 
 
 
@@ -440,7 +456,7 @@ void CReSeqnoDlg::OnBnClickedButtonSaveFile()
 				file.WriteString(m_sFilecontentNew.GetAt(i).GetString());
 				file.WriteString("\n");
 			}
-
+			
 			if (m_sFilecontent.GetSize() <= 0) {
 				m_LIST_MESSAGES.AddString("File is empty!");
 			}
@@ -461,8 +477,7 @@ void CReSeqnoDlg::OnBnClickedButtonCloseFile()
 	// TODO: Add your control notification handler code here
 	//Ruft die Methode saveFileInfo() auf bevor das Programm geschlossen wird
 
-	saveFileInfo();
-	PostQuitMessage(0);
+	Close();
 }
 
 
@@ -474,6 +489,7 @@ void CReSeqnoDlg::OnBnClickedRadio2()
 
 void CReSeqnoDlg::OnDropFiles(HDROP dropInfo)
 {
+	// https://helgeklein.com/blog/how-to-enable-drag-and-drop-for-an-elevated-mfc-application-on-vistawindows-7/
 	ChangeWindowMessageFilter(WM_DROPFILES, MSGFLT_ADD);
 	ChangeWindowMessageFilter(WM_COPYDATA, MSGFLT_ADD);
 	ChangeWindowMessageFilter(0x0049, MSGFLT_ADD);
@@ -502,7 +518,7 @@ void CReSeqnoDlg::OnDropFiles(HDROP dropInfo)
 
 void CReSeqnoDlg::suggestedValues()
 {
-	try {
+	//try {
 	string sLine;
 	CString sLineNew;
 	CString sSeqno;
@@ -512,18 +528,36 @@ void CReSeqnoDlg::suggestedValues()
 	int firstSpaceIndex = 0;
 	int iStart;
 	vector<int>numberVector;
-	
 	int counter = 0;
 	
-		if (m_RADIO_FILTER_INT == 0) {
+	if (m_RADIO_FILTER_INT == -1) {
+		for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
+		{
+			sLine = m_sFilecontent[iLine];
+			if (sLine[0] == 'N') {
+				m_sFilecontentNew.Add("Suggested Filter NXXX");
+				m_RADIO_FILTER_INT = 0;
+				break;
+			}
+		}
+		if (m_RADIO_FILTER_INT == -1)
+		{
+			m_sFilecontentNew.Add("Suggested Filter Heidenhain");
+			m_RADIO_FILTER_INT = 1;
+			
+		}
+		UpdateData(false);
+	}
+		
+	if (m_RADIO_FILTER_INT == 0) {
 			for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
 			{
 				sLine = m_sFilecontent[iLine];
 				if (sLine[0] == 'N')
 				{
-					for (int i = 0; i < sLine.size(); i++)
+					for (int i = 1; i < sLine.size(); i++)
 					{
-						if (sLine[i] == ' ') {
+						if (!(isdigit(sLine[i]))) {
 							firstSpaceIndex = i;
 							break;
 						}
@@ -539,11 +573,11 @@ void CReSeqnoDlg::suggestedValues()
 			for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
 			{
 				sLine = m_sFilecontent[iLine];
-				if (sLine[0] >= 48 && sLine[0] <= 57)
+				if (isdigit(sLine[0]))
 				{
 					for (int i = 0; i < sLine.size(); i++)
 					{
-						if (!(sLine[i] >= 48 && sLine[i] <= 57)) {
+						if (!(isdigit(sLine[i]))) {
 							firstSpaceIndex = i;
 							break;
 						}
@@ -568,17 +602,21 @@ void CReSeqnoDlg::suggestedValues()
 		int count = 0;
 		int highscore = 0;
 		int index = 0;
-
+		//Test Ausgabe
+		/*for (int i = 0; i < diff.size(); i++) {
+			suggestedValue.Format("Suggested Start Value:%d",diff.at(i));
+			m_LIST_MESSAGES.AddString(suggestedValue);
+		}*/
 		for (int i = 0; i < diff.size() - 1; i++) {
 			if (diff.at(i) == diff.at(i + 1)) {
 				count++;
 			}
 		
-				if (count > highscore) {
-					highscore = counter;
-					index = i;
-					counter = 0;
-				}
+			if (count > highscore) {
+				highscore = counter;
+				index = i;
+				counter = 0;
+			}
 			
 		}
 	
@@ -595,8 +633,8 @@ void CReSeqnoDlg::suggestedValues()
 	m_CCOMBOBOX_INDEX++;
 	m_COMBO_START.SetCurSel(m_CCOMBOBOX_INDEX);
 	m_COMBO_STEP.SetCurSel(m_CCOMBOBOX_INDEX);
-	}
-	catch (const std::out_of_range& e) {
+	//}
+	/*catch (const std::out_of_range& e) {
 		
 		if (m_FILE_NAME.GetLength()<0) {
 			m_LIST_MESSAGES.AddString("No file selected");
@@ -612,7 +650,7 @@ void CReSeqnoDlg::suggestedValues()
 			m_LIST_MESSAGES.AddString("Current property: Heidenhein");
 			m_LIST_MESSAGES.AddString("Change to: NXXX");
 		}
-	}
+	}*/
 
 }
 
@@ -690,7 +728,6 @@ void CReSeqnoDlg::upDateText() {
 	CString line;
 	for (int i = 0; i < update_text.GetLength(); i++) {
 		if (update_text[i] == '\n') {
-			
 			m_sFilecontent.Add(line);
 			line = "";
 		}
@@ -735,6 +772,5 @@ void CReSeqnoDlg::OnBnClickedButtonAbout()
 	CAboutDlg cAboutDlg;
 	cAboutDlg.DoModal();
 }
-
 
 

@@ -35,6 +35,7 @@ private:
 	CString		m_sInputfile;
 	int			m_RADIO_FILTER_INT;
 	CFont		m_CFont;
+	void Close();
 
 //	CButton m_RADIO_NXXX;
 // Generierte Funktionen für die Meldungstabellen
@@ -66,4 +67,5 @@ public:
 	
 	int m_iStart;
 	int iedit;
+	afx_msg void OnClose();
 };
