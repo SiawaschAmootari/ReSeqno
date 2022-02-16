@@ -214,6 +214,8 @@ HCURSOR CReSeqnoDlg::OnQueryDragIcon()
 
 void CReSeqnoDlg::OnBnClickedbuttonopen()
 {
+	m_RADIO_FILTER_INT = -1;
+	UpdateData(false);
 	//testetstest
 	// TODO: Fügen Sie hier Ihren Handlercode für Benachrichtigungen des Steuerelements ein.
 	try {
@@ -226,7 +228,6 @@ void CReSeqnoDlg::OnBnClickedbuttonopen()
 		CStdioFile file;
 		if (iD == IDOK)
 		{
-
 			m_sInputfile = cFileDialog.GetPathName();
 			CString newName = m_sInputfile + "_backup";
 			m_STATIC_PATH.SetWindowText(m_sInputfile);
@@ -256,7 +257,6 @@ void CReSeqnoDlg::OnBnClickedbuttonopen()
 			m_EDIT_FILE.SetWindowText(sFilecontent);
 			// close!
 			file.Close();
-
 		}
 		if (m_FILE_NAME.GetLength() <= 0) {
 			m_LIST_MESSAGES.AddString("No file selected");
@@ -397,9 +397,7 @@ void CReSeqnoDlg::Close()
 {
 	saveFileInfo();
 	//PostQuitMessage(0);
-
 	CDialog::OnCancel();
-
 }
 
 
@@ -408,8 +406,6 @@ void CReSeqnoDlg::OnBnClickedButtonSaveFile()
 {
 
 	if (m_FILE_NAME.GetLength() > 0) {
-		
-
 		CString sFilecontentNew;
 		string sfileName(m_FILE_NAME, m_FILE_NAME.GetLength());
 		string snewFileName;
@@ -489,7 +485,7 @@ void CReSeqnoDlg::OnBnClickedRadio2()
 
 void CReSeqnoDlg::OnDropFiles(HDROP dropInfo)
 {
-	// https://helgeklein.com/blog/how-to-enable-drag-and-drop-for-an-elevated-mfc-application-on-vistawindows-7/
+	//https://helgeklein.com/blog/how-to-enable-drag-and-drop-for-an-elevated-mfc-application-on-vistawindows-7/
 	ChangeWindowMessageFilter(WM_DROPFILES, MSGFLT_ADD);
 	ChangeWindowMessageFilter(WM_COPYDATA, MSGFLT_ADD);
 	ChangeWindowMessageFilter(0x0049, MSGFLT_ADD);
@@ -611,13 +607,11 @@ void CReSeqnoDlg::suggestedValues()
 			if (diff.at(i) == diff.at(i + 1)) {
 				count++;
 			}
-		
 			if (count > highscore) {
 				highscore = counter;
 				index = i;
 				counter = 0;
 			}
-			
 		}
 	
 	suggestedValue.Format("Suggested Start Value:%d", numberVector.at(0));
@@ -677,8 +671,7 @@ void CReSeqnoDlg::saveFileInfo()
 }
 
 void CReSeqnoDlg::loadFileInfo()
-{
-	
+{	
 	// Die Datei inifile wird mit mit der Information der letzten Sitzung geladen
 	// Die Werte werden in ein String abgespeichert und dann der CCombobox erst dazu addiert
 	// m_CCOMBOBOX_INDEX wird um eins erhöht damit es auf das zuletzt hinzugefügte Wert zeigt
@@ -737,16 +730,6 @@ void CReSeqnoDlg::upDateText() {
 	}
 }
 
-
-void CReSeqnoDlg::pushTopList(CString s) {
-	for (int i = 0; i < m_LIST_MESSAGES.GetCount(); i++) {
-		m_LIST_MESSAGES.AddString((LPCSTR)m_LIST_MESSAGES.GetItemData(i));
-	}
-}
-
-
-
-
 void CReSeqnoDlg::OnBnClickedClearbutton()
 {
 	m_LIST_MESSAGES.ResetContent();
@@ -758,13 +741,11 @@ void CReSeqnoDlg::OnBnClickedRadioNxxx()
 	m_RADIO_FILTER_INT = 0;
 }
 
-
 void CReSeqnoDlg::OnBnClickedRadioHeidenhein()
 {
 	// TODO: Add your control notification handler code here
 	m_RADIO_FILTER_INT = 1;
 }
-
 
 void CReSeqnoDlg::OnBnClickedButtonAbout()
 {
