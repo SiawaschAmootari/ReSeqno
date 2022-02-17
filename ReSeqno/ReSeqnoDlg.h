@@ -30,11 +30,13 @@ private:
 	CListBox	m_LIST_MESSAGES;
 	CComboBox	m_COMBO_START;
 	CComboBox	m_COMBO_STEP;
+	CComboBox	m_COMBO_FILE_PATH;
 	CString     m_FILE_NAME;
 	int			m_CCOMBOBOX_INDEX;
 	CString		m_sInputfile;
 	int			m_RADIO_FILTER_INT;
 	CFont		m_CFont;
+	int			filePathIndex;
 	void Close();
 
 //	CButton m_RADIO_NXXX;
@@ -63,9 +65,15 @@ public:
 	afx_msg void OnBnClickedRadioNxxx();
 	afx_msg void OnBnClickedRadioHeidenhein();
 	afx_msg void OnBnClickedButtonAbout();
-	void pushTopList(CString s);
+	
 	
 	int m_iStart;
 	int iedit;
 	afx_msg void OnClose();
+	afx_msg void OnBnClickedButtonClearEdit();
+	afx_msg void OnBnClickedButtonClearOutput();
+	
+	
+	afx_msg void OnBnClickedButtonOpenPath();
+	afx_msg void OnBnClickedButtonClearPathBox();
 };
