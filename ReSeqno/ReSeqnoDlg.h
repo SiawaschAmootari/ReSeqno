@@ -30,7 +30,7 @@ private:
 	CListBox	m_LIST_MESSAGES;
 	CComboBox	m_COMBO_START;
 	CComboBox	m_COMBO_STEP;
-	CComboBox	m_COMBO_FILE_PATH;
+	CComboBox m_COMBO_FILE_PATH;
 	CString     m_FILE_NAME;
 	int			m_CCOMBOBOX_INDEX;
 	CString		m_sInputfile;
@@ -67,8 +67,7 @@ public:
 	afx_msg void OnBnClickedButtonAbout();
 	
 	
-	int m_iStart;
-	int iedit;
+	
 	afx_msg void OnClose();
 	afx_msg void OnBnClickedButtonClearEdit();
 	afx_msg void OnBnClickedButtonClearOutput();

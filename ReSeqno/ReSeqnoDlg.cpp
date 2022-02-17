@@ -227,7 +227,7 @@ void CReSeqnoDlg::OnBnClickedButtonOpenPath()
 		try {
 			file.Open(filePath, CStdioFile::modeRead);
 
-			CString sLine;
+			CString sLine="";
 			bool bRead;
 			CString sFilecontent = _T("");
 			int i = 0;
@@ -280,47 +280,57 @@ void CReSeqnoDlg::OnBnClickedbuttonopen()
 		if (iD == IDOK)
 		{
 			m_sInputfile = cFileDialog.GetPathName();
-			CString newName = m_sInputfile + "_backup";
-			m_COMBO_FILE_PATH.InsertString(0,m_sInputfile);
-			//rename(m_sInputfile, newName);
-			CStdioFile file;
-			file.Open(m_sInputfile, CStdioFile::modeRead);
+			if (std::ifstream(m_sInputfile).good()) {
+				CString newName = m_sInputfile + "_backup";
+				m_COMBO_FILE_PATH.InsertString(0, m_sInputfile);
+				//rename(m_sInputfile, newName);
+				CStdioFile file;
+				file.Open(m_sInputfile, CStdioFile::modeRead);
 
-			CString sLine;
-			bool bRead;
-			CString sFilecontent = _T("");
-			int i = 0;
+				CString sLine = "";
+				bool bRead;
+				CString sFilecontent = _T("");
+				int i = 0;
 
-			m_sFilecontent.RemoveAll();
-			m_FILE_NAME = m_sInputfile;
+				m_sFilecontent.RemoveAll();
+				m_FILE_NAME = m_sInputfile;
 
-			while (true)
-			{
-				bRead = file.ReadString(sLine);
-				if (bRead == false)
+				while (true)
 				{
-					break;
+					bRead = file.ReadString(sLine);
+					if (bRead == false)
+					{
+						break;
+					}
+					m_sFilecontent.Add(sLine);
 				}
-				m_sFilecontent.Add(sLine);
+				theApp.ArrToVal(m_sFilecontent, sFilecontent);
+				m_EDIT_FILE.SetWindowText(sFilecontent);
+				// close!
+				file.Close();
 			}
-			theApp.ArrToVal(m_sFilecontent, sFilecontent);
-			m_EDIT_FILE.SetWindowText(sFilecontent);
-			// close!
-			file.Close();
+			if (m_FILE_NAME.GetLength() <= 0) {
+				m_LIST_MESSAGES.InsertString(0, "No file selected");
+			}
+			else {
+				suggestedValues();
+				UpdateData(false);
+
+			}
+			//---------------------------------------------------------//
+			//suggestedValues();
+			//UpdateData(false);
 		}
-		if (m_FILE_NAME.GetLength() <= 0) {
-			m_LIST_MESSAGES.InsertString(0,"No file selected");
-		}
-		//---------------------------------------------------------//
-		suggestedValues();
-		UpdateData(false);
 	}
 	catch (const std::out_of_range& e) {
 		m_LIST_MESSAGES.InsertString(0,"No file selected");
+		//m_hWnd = NULL; 
+		//m_pCtrlSite = NULL;
 	}
 	catch(const std::invalid_argument& e){
 		m_LIST_MESSAGES.InsertString(0,"Invalid file");
 	}
+	
 }
 
 
@@ -444,7 +454,7 @@ void CReSeqnoDlg::OnClose()
 void CReSeqnoDlg::Close()
 {
 	saveFileInfo();
-	//PostQuitMessage(0);
+	EndDialog(IDOK);
 	CDialog::OnCancel();
 }
 
@@ -560,8 +570,8 @@ void CReSeqnoDlg::OnDropFiles(HDROP dropInfo)
 
 void CReSeqnoDlg::suggestedValues()
 {
-	//try {
-	string sLine;
+	try {
+	string sLine="";
 	CString sLineNew;
 	CString sSeqno;
 	CString sFilecontentNew;
@@ -674,24 +684,29 @@ void CReSeqnoDlg::suggestedValues()
 
 	
 	m_COMBO_FILE_PATH.SetCurSel(0);
-	//}
-	/*catch (const std::out_of_range& e) {
+	}
+	catch (const std::out_of_range& e) {
 		
 		if (m_FILE_NAME.GetLength()<0) {
 			m_LIST_MESSAGES.AddString("No file selected");
-
+			m_hWnd = NULL;
+			m_pCtrlSite = NULL;
+			
+			//EndDialog(IDOK);
 		}
 		else if (m_RADIO_FILTER_INT == 0) {
 			m_LIST_MESSAGES.AddString("Wrong numbering property please change ");
 			m_LIST_MESSAGES.AddString("Current property: NXXX");
 			m_LIST_MESSAGES.AddString("Change to: Heidenhein");
+			//EndDialog(IDOK);
 		}
 		else if (m_RADIO_FILTER_INT == 1) {
 			m_LIST_MESSAGES.AddString("Wrong numbering property please change ");
 			m_LIST_MESSAGES.AddString("Current property: Heidenhein");
 			m_LIST_MESSAGES.AddString("Change to: NXXX");
+			//EndDialog(IDOK);
 		}
-	}*/
+	}
 
 }
 

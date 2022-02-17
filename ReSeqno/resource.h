@@ -26,8 +26,8 @@
 #define IDC_BUTTON_CLEAR_OUTPUT         1033
 #define IDC_COMBO_FILE_PATH             1035
 #define IDC_BUTTON_OPEN_PATH            1037
-#define IDC_BUTTON3                     1038
 #define IDC_BUTTON_CLEAR_PATH_BOX       1038
+#define IDC_EDIT1                       1039
 
 // Next default values for new objects
 // 
@@ -35,7 +35,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        132
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1039
+#define _APS_NEXT_CONTROL_VALUE         1040
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
