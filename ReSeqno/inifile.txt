@@ -1,9 +1,6 @@
 Information from the last session:
-START VALUE:2
-STEP VALUE:2
+START VALUE:10
+STEP VALUE:10
 Paths:
 0Path=C:\Users\samootari\OneDrive\Desktop\TESTESTEST.mpf
-1Path=C:\Users\samootari\OneDrive\Desktop\TESTESTEST.mpf
-2Path=C:\Users\samootari\OneDrive\Desktop\TESTESTEST.mpf
-3Path=C:\Users\samootari\OneDrive\Desktop\TESTESTEST.mpf
-4Path=C:\Users\samootari\OneDrive\Desktop\TESTESTEST.mpf
+1Path=C:\Users\samootari\Downloads\test.mpf
