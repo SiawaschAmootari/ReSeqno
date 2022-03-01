@@ -139,13 +139,14 @@ BOOL CReSeqnoDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// Großes Symbol verwenden
 	SetIcon(m_hIcon, FALSE);		// Kleines Symbol verwenden
 	DragAcceptFiles();
+	
 	m_CCOMBOBOX_INDEX = 3;
-	m_COMBO_STEP.AddString(("1"));
+
+	m_COMBO_STEP.AddString("1");
 	m_COMBO_STEP.AddString("2");
 	m_COMBO_STEP.AddString("5");
 	m_COMBO_STEP.AddString("10");
-
-
+	
 	m_COMBO_START.AddString("1");
 	m_COMBO_START.AddString("2");
 	m_COMBO_START.AddString("5");
@@ -154,8 +155,11 @@ BOOL CReSeqnoDlg::OnInitDialog()
 	m_COMBO_STEP.SetCurSel(m_CCOMBOBOX_INDEX);
 	m_COMBO_START.SetCurSel(m_CCOMBOBOX_INDEX);
 
-	loadFileInfo();
+	//loadFileInfo();
 	m_RADIO_FILTER_INT = -1;
+	
+	delteDuplicatesCombobox();
+	loadFileInfo();
 	return TRUE;  // TRUE zurückgeben, wenn der Fokus nicht auf ein Steuerelement gesetzt wird
 }
 
@@ -204,34 +208,35 @@ void CReSeqnoDlg::OnPaint()
 
 // Die System ruft diese Funktion auf, um den Cursor abzufragen, der angezeigt wird, während der Benutzer
 //  das minimierte Fenster mit der Maus zieht.
+
 HCURSOR CReSeqnoDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
 void CReSeqnoDlg::OnBnClickedButtonOpenPath()
 {	
-	CString filePath;
-	CStdioFile file;
-	m_COMBO_FILE_PATH.GetWindowTextA(filePath);
-	if (std::ifstream(filePath).good()) 
+	//CString g_sFilePath;
+	CStdioFile csfFile;
+	m_COMBO_FILE_PATH.GetWindowTextA(g_sFilePath);
+	if (std::ifstream(g_sFilePath).good()) 
 	{
 		m_RADIO_FILTER_INT = -1;
 		UpdateData(false);
 		try 
 		{
-			file.Open(filePath, CStdioFile::modeRead);
+			csfFile.Open(g_sFilePath, CStdioFile::modeRead);
 
 			CString sLine="";
 			bool bRead;
 			CString sFilecontent = _T("");
-			int i = 0;
-
+			
 			m_sFilecontent.RemoveAll();
+			splitPathName();
 			m_FILE_NAME = m_sInputfile;
 
 			while (true)
 			{
-				bRead = file.ReadString(sLine);
+				bRead = csfFile.ReadString(sLine);
 				if (bRead == false)
 				{
 					break;
@@ -240,8 +245,7 @@ void CReSeqnoDlg::OnBnClickedButtonOpenPath()
 			}
 			theApp.ArrToVal(m_sFilecontent, sFilecontent);
 			m_EDIT_FILE.SetWindowText(sFilecontent);
-			// close!
-			file.Close();
+			csfFile.Close();
 			suggestedValues();
 			UpdateData(false);
 		}
@@ -268,21 +272,21 @@ void CReSeqnoDlg::OnBnClickedbuttonopen()
 	{
 		CFileDialog cFileDialog(true, NULL, NULL, NULL, _T("mpf-files (*.mpf)|*.mpf;|text-files(*.txt)|*.txt;|tape-files(*.tape)|*.tape;|nc-files(*.nc)|*.nc;|h-files(*.h)|*.h;|All-files(*.*)|*.*;|"));
 
-		int iD;
-		iD = (int)cFileDialog.DoModal();
+		int iId;
+		iId = (int)cFileDialog.DoModal();
 		bool bOk = true;
 		//CString m_sInputfile;
 		CStdioFile file;
-		if (iD == IDOK)
+		if (iId == IDOK)
 		{
-			m_sInputfile = cFileDialog.GetPathName();
-			if (std::ifstream(m_sInputfile).good()) 
+			g_sFilePath = cFileDialog.GetPathName();
+			if (std::ifstream(g_sFilePath).good())
 			{
-				CString newName = m_sInputfile + "_backup";
-				m_COMBO_FILE_PATH.InsertString(0, m_sInputfile);
+				CString sNewName = g_sFilePath + "_backup";
+				m_COMBO_FILE_PATH.InsertString(0, g_sFilePath);
 				//rename(m_sInputfile, newName);
 				CStdioFile file;
-				file.Open(m_sInputfile, CStdioFile::modeRead);
+				file.Open(g_sFilePath, CStdioFile::modeRead);
 
 				CString sLine = "";
 				bool bRead;
@@ -290,7 +294,7 @@ void CReSeqnoDlg::OnBnClickedbuttonopen()
 				int i = 0;
 
 				m_sFilecontent.RemoveAll();
-				m_FILE_NAME = m_sInputfile;
+				m_FILE_NAME = g_sFilePath;
 
 				while (true)
 				{
@@ -330,24 +334,26 @@ void CReSeqnoDlg::OnBnClickedbuttonopen()
 
 void CReSeqnoDlg::OnBnClickedOk()
 {
+	updateText();
 	m_EDIT_OUTPUT.Clear();
 	m_sFilecontentNew.RemoveAll();
+	//updateText();
 	// Array durchgehen, zeilenweise ergänzen mit Zeilen nummer
-	string cppLine;
+	string sLine;
 	CString sLineNew;
 	CString sSeqno;
 	CString sFilecontentNew; 
 	CString sStart;
 	CString sStep;
 	int iStart;
-	bool changed = false;
+	bool bChanged = false;
 	
 	m_COMBO_START.GetWindowTextA(sStart);
 	m_COMBO_STEP.GetWindowTextA(sStep);
 	
 	iStart = atoi(sStart);
 	int iStep = atoi(sStep);
-	int leftBorder = 0;
+	int iLeftBorder = 0;
 
 	if (m_sFilecontent.GetSize() <= 0) 
 	{
@@ -360,27 +366,28 @@ void CReSeqnoDlg::OnBnClickedOk()
 	{
 		for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
 		{
-			cppLine = m_sFilecontent[iLine];
-			if (cppLine[0] == 'N') {
-				for (int i = 1; i < cppLine.size(); i++)
+			sLine = m_sFilecontent[iLine];
+			if (sLine[0] == 'N') {
+				for (int iIndexCppsLine = 1; iIndexCppsLine < sLine.size(); iIndexCppsLine++)
 				{
-					if (!(isdigit(cppLine[i]))) {
-						leftBorder = i;
+					if (isdigit(sLine[iIndexCppsLine])==false)
+					{
+						iLeftBorder = iIndexCppsLine;
 						break;
 					}
 				}
-				cppLine = cppLine.substr(leftBorder, cppLine.length());
+				sLine = sLine.substr(iLeftBorder, sLine.length());
 
 				sSeqno.Format("N%d", iStart);
 				iStart += iStep;
-				sLineNew = sSeqno + cppLine.c_str();
+				sLineNew = sSeqno + sLine.c_str();
 				m_sFilecontentNew.Add(sLineNew);
 				/// </NEU NUMMERIEREN END>/////////////////////////////////////////////////////////
 			}
 			else
 			{
-				//Falls die Zeile keine Nummerierung hat wird Sie 1:1 übernommen//////////////////
-				m_sFilecontentNew.Add(cppLine.c_str());
+				///Falls die Zeile keine Nummerierung hat wird Sie 1:1 übernommen//////////////////
+				m_sFilecontentNew.Add(sLine.c_str());
 			}
 		}
 	}
@@ -388,27 +395,29 @@ void CReSeqnoDlg::OnBnClickedOk()
 	{
 		for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
 		{
-			cppLine = m_sFilecontent[iLine];
-			if (isdigit(cppLine[0])) 
+			sLine = m_sFilecontent[iLine];
+			char compare = sLine[0];
+			if (isdigit(compare)) 
 			{
-				for (int i = 0; i < cppLine.size(); i++)
+				for (int iIndexCppsLine = 0; iIndexCppsLine < sLine.size(); iIndexCppsLine++)
 				{
-					if (!(isdigit(cppLine[i]))) {
-						leftBorder = i;
+					if (isdigit(sLine[iIndexCppsLine])==false)
+					{
+						iLeftBorder = iIndexCppsLine;
 						break;
 					}
 				}
-				cppLine = cppLine.substr(leftBorder, cppLine.length());
+				sLine = sLine.substr(iLeftBorder, sLine.length());
 				sSeqno.Format("%d", iStart);
 				iStart += iStep;
-				sLineNew = sSeqno + cppLine.c_str();
+				sLineNew = sSeqno + sLine.c_str();
 				m_sFilecontentNew.Add(sLineNew);
 				/// </NEU NUMMERIEREN END>/////////////////////////////////////////////////////////
 			}
 			else
 			{
 				//Falls die Zeile keine Nummerierung hat wird Sie 1:1 übernommen//////////////////
-				m_sFilecontentNew.Add(cppLine.c_str());
+				m_sFilecontentNew.Add(sLine.c_str());
 			}
 
 		}	
@@ -419,7 +428,29 @@ void CReSeqnoDlg::OnBnClickedOk()
 		m_sMsg = " Renumbered Start:" + sStart + " Step:" + sStep;
 		m_LIST_MESSAGES.InsertString(0,"Start:" + sStart + " Step:" + sStep);
 }
+/*
+void CReSeqnoDlg::UpdateCombo(CComboBox* pCombo){
+	CString csCombo;
+	int iRet;
+	pCombo->GetWindowText(csCombo);                   // aktuellen Text holen
+	csCombo.TrimRight();
+	csCombo.TrimLeft();
+	if (csCombo.IsEmpty()) return;
+	iRet = pCombo->FindStringExact(-1, csCombo);   // Wenn noch nicht vorhanden -> neu hinzu. FindStringExact ist nicht case-sensitiv
+	if (iRet == -1)
+	{
 
+		pCombo->AddString(csCombo);
+
+	}
+}*/
+/*
+Aufruf:
+UpdateCombo(&m_COMBOBOX…)
+Beispiel aus einem anderen Projekt :
+m_COMBO_SEARCH.SetWindowText(sSearch);                             // Suchtext in Combofeld eintragen
+UpdateCombo(&m_COMBO_SEARCH);
+*/
 
 
 
@@ -450,52 +481,51 @@ void CReSeqnoDlg::Close()
 
 void CReSeqnoDlg::OnBnClickedButtonSaveFile()
 {
-
-	if (m_FILE_NAME.GetLength() > 0) 
+	updateText();
+	if (g_sFilePath.GetLength() > 0) 
 	{
 		CString sFilecontentNew;
-		string sfileName(m_FILE_NAME, m_FILE_NAME.GetLength());
-		string snewFileName;
+		string sfileName((LPCTSTR)g_sFilePath);
+		string sNewFileName;
 
 		int lastSlashIndex = 0;
 		int lastDot = 0;
 		// IGNORE:Der Name der Ursprünglichen Datei wird zerlegt und ein "_new" wird angehängt
 		// UPDATE: der Name der neuen = Name der alten Datei
-		for (int i = 0; i < sfileName.length(); i++)
+		for (int iIndexFileName = 0; iIndexFileName < sfileName.length(); iIndexFileName++)
 		{
-			if (sfileName[i] == '\\') 
+			if (sfileName[iIndexFileName] == '\\')
 			{
-				lastSlashIndex = i + 1;
+				lastSlashIndex = iIndexFileName + 1;
 			}
-			if (sfileName[i] == '.') 
+			if (sfileName[iIndexFileName] == '.')
 			{
-				lastDot = i;
+				lastDot = iIndexFileName;
 			}
-
 		}
 
-		snewFileName = sfileName.substr(lastSlashIndex);
-		snewFileName = snewFileName.replace(snewFileName.end() - 4, snewFileName.end(), "");
-		snewFileName = "BackupFiles\\" + snewFileName + "_backup.mpf";
-		int ok = rename(m_FILE_NAME, snewFileName.c_str());
+		sNewFileName = sfileName.substr(lastSlashIndex);
+		sNewFileName = sNewFileName.replace(sNewFileName.end() - 4, sNewFileName.end(), "");
+		sNewFileName = "BackupFiles\\" + sNewFileName + "_backup.mpf";
+		int ok = rename(m_FILE_NAME, sNewFileName.c_str());
 
 		// Neuer Dialog wird gestartet, die Datei kann auch überschrieben werden 
 		// falls diese schon existiert der User wird aber nochmals gefragt:OFN_OVERWRITEPROMPT 
 
 		CFileDialog cFileDialog(false, _T("mpf"), m_FILE_NAME, OFN_OVERWRITEPROMPT, _T("mpf-files (*.mpf)|*.mpf;|text-Files(*.txt)|*.txt;|"));
-		int iD;
-		iD = (int)cFileDialog.DoModal();
+		int iId;
+		iId = (int)cFileDialog.DoModal();
 		bool bOk = true;
 		CString m_sSavefile;
 
-		if (iD == IDOK)
+		if (iId == IDOK)
 		{
 			m_sSavefile = cFileDialog.GetPathName();
 			CStdioFile file(cFileDialog.GetPathName(), CFile::modeCreate | CFile::modeWrite | CFile::typeText);
-			for (int i = 0; i < m_sFilecontentNew.GetSize(); i++) 
+			for (int iIndexM_sFilecontentNew = 0; iIndexM_sFilecontentNew < m_sFilecontentNew.GetSize(); iIndexM_sFilecontentNew++)
 			{
-				file.WriteString(m_sFilecontentNew.GetAt(i).GetString());
-				file.WriteString("\n");
+				file.WriteString(m_sFilecontentNew.GetAt(iIndexM_sFilecontentNew).GetString());
+				//file.WriteString("\n");
 			}
 			if (m_sFilecontent.GetSize() <= 0) 
 			{
@@ -507,6 +537,7 @@ void CReSeqnoDlg::OnBnClickedButtonSaveFile()
 	}
 	else 
 	{
+		m_LIST_MESSAGES.InsertString(0, m_FILE_NAME);
 		m_LIST_MESSAGES.InsertString(0,"File is empty!");
 	}
 }
@@ -516,16 +547,11 @@ void CReSeqnoDlg::OnBnClickedButtonSaveFile()
 
 void CReSeqnoDlg::OnBnClickedButtonCloseFile()
 {
-	// TODO: Add your control notification handler code here
-	//Ruft die Methode saveFileInfo() auf bevor das Programm geschlossen wird
 	Close();
 }
 
 
-void CReSeqnoDlg::OnBnClickedRadio2()
-{
-	// TODO: Add your control notification handler code here
-}
+
 
 
 void CReSeqnoDlg::OnDropFiles(HDROP dropInfo)
@@ -552,13 +578,9 @@ void CReSeqnoDlg::OnDropFiles(HDROP dropInfo)
 	DragFinish(dropInfo);
 }
 
-
-
-//Löscht alles was in Message Box enthalten ist
-
-
 void CReSeqnoDlg::suggestedValues()
 {
+	//updateText();
 	try 
 	{
 	string sLine="";
@@ -567,10 +589,10 @@ void CReSeqnoDlg::suggestedValues()
 	CString sFilecontentNew;
 	CString sStart;
 	CString sStep;
-	int rightBorder = 0;
+	int iRightBorder = 0;
 	int iStart;
-	vector<int>numberVector;
-	int counter = 0;
+	vector<int>vNumbers;
+	
 	
 	if (m_RADIO_FILTER_INT == -1) 
 	{
@@ -598,94 +620,94 @@ void CReSeqnoDlg::suggestedValues()
 				sLine = m_sFilecontent[iLine];
 				if (sLine[0] == 'N')
 				{
-					for (int i = 1; i < sLine.size(); i++)
+					for (int iIndex_sLine = 1; iIndex_sLine < sLine.size(); iIndex_sLine++)
 					{
-						if (!(isdigit(sLine[i]))) 
+						if (!(isdigit(sLine[iIndex_sLine])))
 						{
-							rightBorder = i;
+							iRightBorder = iIndex_sLine;
 							break;
 						}
 					}
-					sLine = sLine.substr(1, rightBorder);
-					numberVector.push_back(stoi(sLine));
+					sLine = sLine.substr(1, iRightBorder);
+					vNumbers.push_back(stoi(sLine));
 				}
 			}
 		}
 		else if (m_RADIO_FILTER_INT == 1) 
-	{
+		{
 			for (int iLine = 0; iLine < m_sFilecontent.GetSize(); iLine++)
 			{
 				sLine = m_sFilecontent[iLine];
 				if (isdigit(sLine[0]))
 				{
-					for (int i = 0; i < sLine.size(); i++)
+					for (int iIndex_sLine = 0; iIndex_sLine < sLine.size(); iIndex_sLine++)
 					{
-						if (!(isdigit(sLine[i]))) 
+						if (!(isdigit(sLine[iIndex_sLine])))
 						{
-							rightBorder = i;
+							iRightBorder = iIndex_sLine;
 							break;
 						}
 					}
-					sLine = sLine.substr(0, rightBorder);
-					numberVector.push_back(stoi(sLine));
+					sLine = sLine.substr(0, iRightBorder);
+					vNumbers.push_back(stoi(sLine));
 				}
 			}
 		}
 
-		CString suggestedValue;
-		vector<int>diff;
+		CString sSuggestedValue;
+		vector<int>vDifference;
 
-		for (int i = 0; i < numberVector.size() - 1; i++) 
+		for (int iIndex_vNumbers = 0; iIndex_vNumbers < vNumbers.size() - 1; iIndex_vNumbers++)
 		{
-			if (numberVector.at(i + 1) - numberVector.at(i) > 0) 
+			if (vNumbers.at(iIndex_vNumbers +1) - vNumbers.at(iIndex_vNumbers) > 0)
 			{
-				diff.push_back(numberVector.at(i + 1) - numberVector.at(i));
+				vDifference.push_back(vNumbers.at(iIndex_vNumbers +1) - vNumbers.at(iIndex_vNumbers));
 			}
 		}
 
-		sort(diff.begin(), diff.end());
-		int count = 0;
-		int highscore = 0;
-		int stepValue = 0;
-		//Test Ausgabe
-		/*for (int i = 0; i < diff.size(); i++) {
-			suggestedValue.Format("Suggested Start Value:%d",diff.at(i));
-			m_LIST_MESSAGES.AddString(suggestedValue);
-		}*/
-		for (int i = 0; i < diff.size(); i++) 
+		sort(vDifference.begin(), vDifference.end());
+		int iCount = 0;
+		int iHighscore = 0;
+		int iStepValue = 0;
+		
+		for (int iIndex_vDifference_comparableValue = 0; iIndex_vDifference_comparableValue < vDifference.size(); iIndex_vDifference_comparableValue++)
 		{
-			for (int j = 0; j < diff.size(); j++) 
+			for (int iIndex_vDifference = 0; iIndex_vDifference < vDifference.size(); iIndex_vDifference++)
 			{
-				if (diff.at(i) == diff.at(j)) 
+				if (vDifference.at(iIndex_vDifference_comparableValue) == vDifference.at(iIndex_vDifference))
 				{
-					count++;
+					iCount++;
 				}
 			}
-			if (count > highscore) 
+			if (iCount > iHighscore) 
 			{
-				highscore = count;
-				stepValue = diff.at(i);
+				iHighscore = iCount;
+				iStepValue = vDifference.at(iIndex_vDifference_comparableValue);
 			}
-			count = 0;
+			iCount = 0;
 		}
 	
-	suggestedValue.Format("Suggested Start Value:%d", numberVector.at(0));
-	m_LIST_MESSAGES.InsertString(0,suggestedValue);
-	suggestedValue.Format("Suggested Step Value:%d", stepValue);
-	m_LIST_MESSAGES.InsertString(0,suggestedValue);
+	sSuggestedValue.Format("Suggested Start Value:%d", vNumbers.at(0));
+	m_LIST_MESSAGES.InsertString(0,sSuggestedValue);
+	sSuggestedValue.Format("Suggested Step Value:%d", iStepValue);
+	m_LIST_MESSAGES.InsertString(0,sSuggestedValue);
 
-	suggestedValue.Format("%d", stepValue);
-	m_COMBO_STEP.AddString(suggestedValue);
-	suggestedValue.Format("%d", numberVector.at(0));
-	m_COMBO_START.AddString(suggestedValue);
+	sSuggestedValue.Format("%d", iStepValue);
+	m_COMBO_STEP.SetWindowText(sSuggestedValue);
+	m_COMBO_STEP.AddString(sSuggestedValue);
+
+	sSuggestedValue.Format("%d", vNumbers.at(0));
+	m_COMBO_START.SetWindowText(sSuggestedValue);
+	m_COMBO_START.AddString(sSuggestedValue);
 
 	m_CCOMBOBOX_INDEX++;
-	m_COMBO_START.SetCurSel(m_CCOMBOBOX_INDEX);
-	m_COMBO_STEP.SetCurSel(m_CCOMBOBOX_INDEX);
 
 	m_COMBO_FILE_PATH.SetCurSel(0);
+	delteDuplicatesCombobox();
+	
+	//m_COMBO_STEP.SetCurSel(m_CCOMBOBOX_INDEX);
 	}
-	catch (const std::out_of_range& e) 
+	catch (const std::out_of_range& exception) 
 	{
 		
 		if (m_FILE_NAME.GetLength()<0) 
@@ -718,24 +740,24 @@ void CReSeqnoDlg::saveFileInfo()
 	//ANSI/UNICODE versionen 
 	//Methode wir in OnBnClickedButtonCloseFile() aufgerufen
 
-	ofstream inifile("inifile.txt");
+	ofstream osInitialFile("inifile.txt");
 	CString sStart;
 	CString sStep;
-	CString path;
+	CString sPath;
 	m_COMBO_START.GetWindowTextA(sStart);
 	m_COMBO_STEP.GetWindowTextA(sStep);
 
-	inifile << "Information from the last session:" << endl;
-	inifile << "START VALUE:" << sStart<< endl;
-	inifile << "STEP VALUE:" << sStep << endl;
-	inifile << "Paths:" << endl;
+	osInitialFile << "Information from the last session:" << endl;
+	osInitialFile << "START VALUE:" << sStart<< endl;
+	osInitialFile << "STEP VALUE:" << sStep << endl;
+	osInitialFile << "Paths:" << endl;
 	
-	for (int i = 0; i < m_COMBO_FILE_PATH.GetCount(); i++) 
+	for (int iIndex_m_COMBO_FILE_PATH = 0; iIndex_m_COMBO_FILE_PATH < m_COMBO_FILE_PATH.GetCount(); iIndex_m_COMBO_FILE_PATH++)
 	{
-		m_COMBO_FILE_PATH.GetLBText(i, path);
-		inifile << i << "Path=" << path << endl;	
+		m_COMBO_FILE_PATH.GetLBText(iIndex_m_COMBO_FILE_PATH, sPath);
+		osInitialFile << iIndex_m_COMBO_FILE_PATH << "Path=" << sPath << endl;
 	}
-	inifile.close();
+	osInitialFile.close();
 }
 
 void CReSeqnoDlg::loadFileInfo()
@@ -744,79 +766,95 @@ void CReSeqnoDlg::loadFileInfo()
 	// Die Werte werden in ein String abgespeichert und dann der CCombobox erst dazu addiert
 	// m_CCOMBOBOX_INDEX wird um eins erhöht damit es auf das zuletzt hinzugefügte Wert zeigt
 	// Die String zerlegung wurde mit C++ strings verarbeitet und ich ein CString am ende eingespeichert
-	ifstream inifile("inifile.txt");
-	string line;
+	ifstream isInitialFile("inifile.txt");
+	string sLine;
 	m_CCOMBOBOX_INDEX++;
-	filePathIndex = -1;
-	while (getline(inifile, line)) 
+	iFilePathIndex = -1;
+	while (getline(isInitialFile, sLine))
 	{
-		if (line.find("START")!=string::npos) 
+		if (sLine.find("START")!=string::npos) 
 		{
-			for (int i = 0; i < line.size(); i++) 
+			for (int iLine = 0; iLine < sLine.size(); iLine++) 
 			{
-				if (line[i] == ':') 
+				if (sLine[iLine] == ':') 
 				{
-					string substring = line.replace(line.begin(),line.begin()+i+1,"");
-					m_COMBO_START.AddString(substring.c_str());
-					m_COMBO_START.SetCurSel(m_CCOMBOBOX_INDEX);
+					string substring = sLine.replace(sLine.begin(),sLine.begin()+ iLine +1,"");
+					//m_COMBO_START.AddString(substring.c_str());
+					//m_COMBO_START.SetCurSel(m_CCOMBOBOX_INDEX);
+					m_COMBO_START.SetWindowText(substring.c_str());
 				}
 			}
 		}
-		if (line.find("STEP") != string::npos) 
+		if (sLine.find("STEP") != string::npos) 
 		{
-			for (int i = 0; i < line.size(); i++) 
+			for (int iLine = 0; iLine < sLine.size(); iLine++) 
 			{
-				if (line[i] == ':') 
+				if (sLine[iLine] == ':') 
 				{
-					string substring = line.replace(line.begin(), line.begin() + i + 1, "");
-					m_COMBO_STEP.AddString(substring.c_str());
-					m_COMBO_STEP.SetCurSel(m_CCOMBOBOX_INDEX);
+					string substring = sLine.replace(sLine.begin(), sLine.begin() + iLine + 1, "");
+					//m_COMBO_STEP.AddString(substring.c_str());
+					//m_COMBO_STEP.SetCurSel(m_CCOMBOBOX_INDEX);
+					m_COMBO_STEP.SetWindowText(substring.c_str());
 				}
 			}
 		}
-		if (line.find("Path") != string::npos) 
+		if (sLine.find("Path") != string::npos) 
 		{
-			for (int i = 0; i < line.size(); i++) 
+			for (int iLine = 0; iLine < sLine.size(); iLine++) 
 			{
-				if (line[i] == '=') 
+				if (sLine[iLine] == '=') 
 				{
-					string substring = line.replace(line.begin(), line.begin() + i + 1, "");
+					string substring = sLine.replace(sLine.begin(), sLine.begin() + iLine + 1, "");
 					m_COMBO_FILE_PATH.AddString(substring.c_str());
-					filePathIndex++;
+					iFilePathIndex++;
 				}
 			}
 		}
 	}
-	m_COMBO_FILE_PATH.SetCurSel(filePathIndex);
-	inifile.close();
+	m_COMBO_FILE_PATH.SetCurSel(iFilePathIndex);
+	isInitialFile.close();
 }
 
 void CReSeqnoDlg::OnBnClickedButton1()
 {
-	//Löscht Alle Elemente aus der Message Box
-	//Name der Funktion sollte noch geändert werden
 	m_LIST_MESSAGES.ResetContent();
 }
 
-void CReSeqnoDlg::upDateText() {
+void CReSeqnoDlg::updateText() {
 	//theApp.ArrToVal(m_sFilecontent, sFilecontent);
 	//m_EDIT_FILE.SetWindowText(sFilecontent);
-	CString update_text;
-	m_EDIT_FILE.GetWindowTextA(update_text);
+	CString sUpdateText;
+	m_EDIT_FILE.GetWindowTextA(sUpdateText);
 	m_sFilecontent.RemoveAll();
-	CString line;
-	for (int i = 0; i < update_text.GetLength(); i++) 
+	CString sLine;
+	for (int iUpdateText = 0; iUpdateText < sUpdateText.GetLength(); iUpdateText++)
 	{
-		if (update_text[i] == '\n') 
+		if (sUpdateText[iUpdateText] =='\n')
 		{
-			m_sFilecontent.Add(line);
-			line = "";
+			sLine = sLine + sUpdateText[iUpdateText];
+			m_sFilecontent.Add(sLine);
+			sLine = "";
 		}
-		else 
+		else if(sUpdateText[iUpdateText] != '\r')
 		{
-			line = line + update_text[i];
+			sLine = sLine + sUpdateText[iUpdateText];
 		}
 	}
+	
+	for (int iUpdateText = 0; iUpdateText < sUpdateText.GetLength(); iUpdateText++)
+	{
+		if (sUpdateText[iUpdateText] == '\n')
+		{
+			sLine = sLine + sUpdateText[iUpdateText];
+			m_sFilecontent.Add(sLine);
+			sLine = "";
+		}
+		else if (sUpdateText[iUpdateText] != '\r')
+		{
+			sLine = sLine + sUpdateText[iUpdateText];
+		}
+	}
+
 }
 
 void CReSeqnoDlg::OnBnClickedClearbutton()
@@ -831,13 +869,11 @@ void CReSeqnoDlg::OnBnClickedRadioNxxx()
 
 void CReSeqnoDlg::OnBnClickedRadioHeidenhein()
 {
-	// TODO: Add your control notification handler code here
 	m_RADIO_FILTER_INT = 1;
 }
 
 void CReSeqnoDlg::OnBnClickedButtonAbout()
 {
-	// TODO: Add your control notification handler code here
 	CAboutDlg cAboutDlg;
 	cAboutDlg.DoModal();
 }
@@ -859,3 +895,63 @@ void CReSeqnoDlg::OnBnClickedButtonClearPathBox()
 {
 	m_COMBO_FILE_PATH.ResetContent();
 }
+
+void CReSeqnoDlg::splitPathName() {
+	CString sReplaceNameReverse=_T("");
+	CString sReplaceName = _T("");
+	int iSlashIndex = 0;
+	for (int iIndex_g_sFilePath = g_sFilePath.GetLength()-1; iIndex_g_sFilePath >= 0; iIndex_g_sFilePath--) 
+	{
+		sReplaceNameReverse.AppendChar(g_sFilePath.GetAt(iIndex_g_sFilePath));
+	}
+
+	for (int iIndex_sReplaceNameReverse = sReplaceNameReverse.GetLength()-1; iIndex_sReplaceNameReverse >= 0; iIndex_sReplaceNameReverse--) 
+	{
+		sReplaceName.AppendChar(sReplaceNameReverse.GetAt(iIndex_sReplaceNameReverse));
+	}
+	m_LIST_MESSAGES.AddString(g_sFilePath);
+	m_LIST_MESSAGES.AddString(sReplaceName);
+	m_FILE_NAME.Append(sReplaceName);
+	m_LIST_MESSAGES.AddString(m_FILE_NAME);
+}
+
+
+void CReSeqnoDlg::delteDuplicatesCombobox() {
+	int iCount = m_COMBO_START.GetCount();
+	if (iCount <= 0) return;
+	CString sCompareOne;
+	CString sCompareTwo;
+
+	for (int iIndex_COMBO_START_sCompareOne = 0; iIndex_COMBO_START_sCompareOne < iCount; iIndex_COMBO_START_sCompareOne++)
+	{
+		m_COMBO_START.GetLBText(iIndex_COMBO_START_sCompareOne, sCompareOne);
+		for (int iIndex_COMBO_START_sCompareTwo = 0; iIndex_COMBO_START_sCompareTwo < iCount; iIndex_COMBO_START_sCompareTwo++)
+		{
+			m_COMBO_START.GetLBText(iIndex_COMBO_START_sCompareTwo, sCompareTwo);
+			if (sCompareOne == sCompareTwo && iIndex_COMBO_START_sCompareOne != iIndex_COMBO_START_sCompareTwo)
+			{
+				m_COMBO_START.DeleteString(iIndex_COMBO_START_sCompareTwo);
+				iCount--;
+			}
+		}
+	}
+
+	iCount = m_COMBO_STEP.GetCount();
+	if (iCount <= 0) return;
+
+	for (int iIndex_COMBO_START_sCompareOne = 0; iIndex_COMBO_START_sCompareOne < iCount; iIndex_COMBO_START_sCompareOne++)
+	{
+		m_COMBO_STEP.GetLBText(iIndex_COMBO_START_sCompareOne, sCompareOne);
+		for (int iIndex_COMBO_START_sCompareTwo = 0; iIndex_COMBO_START_sCompareTwo < iCount; iIndex_COMBO_START_sCompareTwo++)
+		{
+			m_COMBO_STEP.GetLBText(iIndex_COMBO_START_sCompareTwo, sCompareTwo);
+			if (sCompareOne == sCompareTwo && iIndex_COMBO_START_sCompareOne != iIndex_COMBO_START_sCompareTwo)
+			{
+				m_COMBO_STEP.DeleteString(iIndex_COMBO_START_sCompareTwo);
+				iCount--;
+			}
+		}
+	}
+}
+
+

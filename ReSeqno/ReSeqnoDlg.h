@@ -32,11 +32,12 @@ private:
 	CComboBox	m_COMBO_STEP;
 	CComboBox m_COMBO_FILE_PATH;
 	CString     m_FILE_NAME;
+	CString     g_sFilePath;
 	int			m_CCOMBOBOX_INDEX;
 	CString		m_sInputfile;
 	int			m_RADIO_FILTER_INT;
 	CFont		m_CFont;
-	int			filePathIndex;
+	int			iFilePathIndex;
 	void Close();
 
 //	CButton m_RADIO_NXXX;
@@ -55,8 +56,10 @@ private:
 	void suggestedValues();
 	void saveFileInfo();
 	void loadFileInfo();
-	void upDateText();
-	
+	void updateText();
+	void splitPathName();
+	void UpdateCombo(CComboBox* pCombo);
+	void delteDuplicatesCombobox();
 public:
 	afx_msg void OnBnClickedButtonCloseFile();
 	afx_msg void OnBnClickedRadio2();
